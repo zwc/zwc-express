@@ -1,0 +1,15 @@
+node_modules
+.idea
+nbproject
+*.log
+*.iml
+coverage.html
+.project
+.settings
+.DS_Store
+coverage
+report
+atlassian-ide-plugin.xml
+/.editorconfig
+/uploads
+dump.rdb
