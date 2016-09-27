@@ -4,7 +4,7 @@ const ProtoBuf = require('protobufjs');
 const app = require('./app');
 const log = require('./log');
 const Cookies = require('cookies');
-const token = require('../../const/token');
+const token = process.env.TOKEN;
 
 let handlers = {};
 
