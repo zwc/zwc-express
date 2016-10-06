@@ -4,7 +4,6 @@ const ProtoBuf = require('protobufjs');
 const app = require('./app');
 const log = require('./log');
 const Cookies = require('cookies');
-const token = process.env.TOKEN || {};
 
 let handlers = {};
 
@@ -21,15 +20,24 @@ module.exports = (service, proto) => {
 		res.json({ name: service });
 	});
 
+	const reduceFields = (response, field) => {
+		response[field.name] = field.type;
+		return response;
+	};
+
 	app.get('/', (req, res) => {
 		H([builder.lookup(service)])
 			.pluck('children')
 			.flatMap(H)
 			.map(service => {
+				const requestFields = builder.lookup(service.requestName).children.map(f => ({ name: f.name, type: f.type.name })).reduce(reduceFields, {});
+				const responseFields = builder.lookup(service.responseName).children.map(f => ({ name: f.name, type: f.type.name })).reduce(reduceFields, {});
 				return {
 					name: service.name,
 					href: service.options.templatedUrl,
-					method: service.options.method
+					method: service.options.method,
+					request: requestFields,
+					response: responseFields,
 				};
 			})
 			.collect()
@@ -49,13 +57,11 @@ module.exports = (service, proto) => {
 		const url = service.options.templatedUrl.split('{?')[0]; // remove query params
 		const role = service.options.role;
 		app[method](url, (req, res) => {
-			const key = req.headers['wpa-key'];
 			log.debug(`${method}, ${url}, ${role} [${key}]`);
 			const cookies = new Cookies(req, res);
 			const session = cookies.get('session') || req.query.session;
-			const admin = key === token.key;
-			if(role === 'session' && !session && !admin) {
-				res.json({ success: false, err: 'not logged in' });
+			if(role === 'session' && !session) {
+				res.json({ error: 'Not logged in' });
 			} else {
 				req.session = session;
 				return handlers[service.name](req, res);
