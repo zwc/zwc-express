@@ -57,7 +57,7 @@ module.exports = (service, proto) => {
 		const url = service.options.templatedUrl.split('{?')[0]; // remove query params
 		const role = service.options.role;
 		app[method](url, (req, res) => {
-			log.debug(`${method}, ${url}, ${role} [${key}]`);
+			log.debug(`${method}, ${url}, ${role}`);
 			const cookies = new Cookies(req, res);
 			const session = cookies.get('session') || req.query.session;
 			if(role === 'session' && !session) {
