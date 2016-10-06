@@ -3,7 +3,6 @@ const H = require('highland');
 const ProtoBuf = require('protobufjs');
 const app = require('./app');
 const log = require('./log');
-const Cookies = require('cookies');
 
 let handlers = {};
 
@@ -58,8 +57,7 @@ module.exports = (service, proto) => {
 		const role = service.options.role;
 		app[method](url, (req, res) => {
 			log.debug(`${method}, ${url}, ${role}`);
-			const cookies = new Cookies(req, res);
-			const session = cookies.get('session') || req.query.session;
+			const session = req.headers.session;
 			if(role === 'session' && !session) {
 				res.json({ error: 'Not logged in' });
 			} else {
