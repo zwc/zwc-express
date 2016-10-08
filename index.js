@@ -28,7 +28,7 @@ module.exports = (service, proto) => {
 		H([builder.lookup(service)])
 			.pluck('children')
 			.flatMap(H)
-			.reject(service => service.role === 'admin')
+			.reject(service => service.options.role === 'admin')
 			.map(service => {
 				const requestFields = builder.lookup(service.requestName).children.map(f => ({ name: f.name, type: f.type.name })).reduce(reduceFields, {});
 				const responseFields = builder.lookup(service.responseName).children.map(f => ({ name: f.name, type: f.type.name })).reduce(reduceFields, {});
