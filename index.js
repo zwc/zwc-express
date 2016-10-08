@@ -28,6 +28,7 @@ module.exports = (service, proto) => {
 		H([builder.lookup(service)])
 			.pluck('children')
 			.flatMap(H)
+			.reject(service => service.role === 'admin')
 			.map(service => {
 				const requestFields = builder.lookup(service.requestName).children.map(f => ({ name: f.name, type: f.type.name })).reduce(reduceFields, {});
 				const responseFields = builder.lookup(service.responseName).children.map(f => ({ name: f.name, type: f.type.name })).reduce(reduceFields, {});
@@ -57,7 +58,7 @@ module.exports = (service, proto) => {
 		const role = service.options.role;
 		app[method](url, (req, res) => {
 			log.debug(`${method}, ${url}, ${role}`);
-			const session = req.headers.session;
+			const session = req.headers.session; // Should be named token instead!
 			if(role === 'session' && !session) {
 				res.json({ error: 'Not logged in' });
 			} else {
