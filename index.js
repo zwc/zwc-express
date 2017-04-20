@@ -64,8 +64,9 @@ module.exports = (service, proto) => {
 
 	const mapFields = (params) => (acc, field) => {
 		const types = {
-			'string': '',
-			'int32': 0
+			string: '',
+			int32: 0,
+			bool: false
 		};
 		switch(field.type) {
 			case 'string':
@@ -73,6 +74,9 @@ module.exports = (service, proto) => {
 				break;
 			case 'int32':
 				acc[field.name] = parseInt(params[field.name]) || types[field.type];
+				break;
+			case 'bool':
+				acc[field.name] = !!params[field.name] || types[field.type];
 				break;
 			default:
 				acc[field.name] = params[field.name] || types[field.type];
