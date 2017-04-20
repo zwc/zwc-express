@@ -66,11 +66,15 @@ module.exports = (service, proto) => {
 		const types = {
 			string: '',
 			int32: 0,
+			float: 0.0,
 			bool: false
 		};
 		switch(field.type) {
 			case 'string':
 				acc[field.name] = params[field.name].toString() || types[field.type];
+				break;
+			case 'float':
+				acc[field.name] = parseFloat(params[field.name]) || types[field.type];
 				break;
 			case 'int32':
 				acc[field.name] = parseInt(params[field.name]) || types[field.type];
