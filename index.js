@@ -19,9 +19,9 @@ module.exports = (service, proto) => {
 		res.json({ name: service });
 	});
 
-	const reduceFields = (response, field) => {
-		response[field.name] = field.type;
-		return response;
+	const reduceFields = (acc, field) => {
+		acc[field.name] = field.type;
+		return acc;
 	};
 
 	app.get('/', (req, res) => {
@@ -30,8 +30,18 @@ module.exports = (service, proto) => {
 			.flatMap(H)
 			.reject(service => service.options.role === 'admin')
 			.map(service => {
-				const requestFields = builder.lookup(service.requestName).children.map(f => ({ name: f.name, type: f.type.name })).reduce(reduceFields, {});
-				const responseFields = builder.lookup(service.responseName).children.map(f => ({ name: f.name, type: f.type.name })).reduce(reduceFields, {});
+				const requestFields = builder
+					.lookup(service.requestName)
+					.children
+					.map(f => ({ name: f.name, type: f.type.name }))
+					.reduce(reduceFields, {});
+
+				const responseFields = builder
+					.lookup(service.responseName)
+					.children
+					.map(f => ({ name: f.name, type: f.type.name }))
+					.reduce(reduceFields, {});
+
 				return {
 					name: service.name,
 					href: service.options.templatedUrl,
@@ -52,19 +62,42 @@ module.exports = (service, proto) => {
 		};
 	};
 
+	const mapFields = (params) => (acc, field) => {
+		const types = {
+			'string': '',
+			'int32': 0
+		};
+		switch(field.type) {
+			case 'string':
+				acc[field.name] = params[field.name].toString() || types[field.type];
+				break;
+			case 'int32':
+				acc[field.name] = parseInt(params[field.name]) || types[field.type];
+				break;
+			default:
+				acc[field.name] = params[field.name] || types[field.type];
+				break;
+		}
+		return acc;
+	};
+
 	const addRoute = (service) => {
 		const method = service.options.method.toLowerCase();
 		const url = service.options.templatedUrl.split('{?')[0]; // remove query params
 		const role = service.options.role;
 		app[method](url, (req, res) => {
 			log.debug(`${method}, ${url}, ${role}`);
-			const session = req.headers.session; // Should be named token instead!
-			if(role === 'session' && !session) {
-				res.json({ error: 'Not logged in' });
-			} else {
-				req.session = session;
-				return handlers[service.name](req, res);
-			}
+
+			const params = Object.assign({}, req.params, req.body);
+
+			const requestFields = builder
+				.lookup(service.request)
+				.children
+				.map(f => ({ name: f.name, type: f.type.name }))
+				.reduce(mapFields(params), {});
+
+			req.params = requestFields;
+			return handlers[service.name](req, res);
 		});
 	};
 
